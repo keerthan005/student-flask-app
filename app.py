@@ -1,10 +1,7 @@
-import pickle
 from flask import Flask, request, jsonify
+import pickle
 
 app = Flask(__name__)
-
-# Load the trained model
-model = pickle.load(open('model.pkl', 'rb'))
 
 @app.route('/')
 def home():
@@ -12,15 +9,25 @@ def home():
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    data = request.get_json(force=True)
+    try:
+        data = request.get_json(force=True)
 
-    input_features = [data['gender'],
-                      data['race_ethnicity'],
-                      data['parental_level_of_education'],
-                      data['lunch'],
-                      data['test_preparation_course'],
-                      data['reading_score'],
-                      data['writing_score']]
+        # Load model inside route
+        with open('model.pkl', 'rb') as f:
+            model = pickle.load(f)
 
-    prediction = model.predict([input_features])
-    return jsonify({'Predicted Class': int(prediction[0])})
+        input_features = [
+            data['gender'],
+            data['race_ethnicity'],
+            data['parental_level_of_education'],
+            data['lunch'],
+            data['test_preparation_course'],
+            data['reading_score'],
+            data['writing_score']
+        ]
+
+        prediction = model.predict([input_features])
+        return jsonify({'Predicted Class': int(prediction[0])})
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
